@@ -127,6 +127,37 @@ mean () {
 	return 0
 }
 
+transpose () {
+	if [[ -z $1 ]]; then
+		FILE=${1:-/dev/stdin}
+	elif [[ -e "$1" ]]; then
+		FILE=$1
+	elif [[ !(-e "$1") ]]; then
+		echo "$1 does not exist!" 1>&2
+		exit 1
+	fi
+
+	declare -A matrixA
+
+	row=0
+	col=0
+	while read line; do
+		col=0
+		for i in $line; do
+			matrixA[$row,$col]=$i
+			(( col++ ))
+		done
+		(( row++ ))
+	done < "$FILE"
+
+	for (( i = 0; i < $col; i++ )); do
+		for (( j = 0; j < $row; j++ )); do
+			echo -en "${matrixA[$j,$i]}\t"
+		done
+		echo
+	done
+}
+
 case $1 in
 	"dims")
 		if [[ $# -gt 2 ]]; then
@@ -150,6 +181,14 @@ case $1 in
 			exit 3
 		else
 			mean $2
+		fi
+		;;
+	"transpose")
+		if [[ $# -gt 2 ]]; then
+			echo "Too many args!" 1>&2
+			exit 3
+		else
+			transpose $2
 		fi
 		;;
 	*)
