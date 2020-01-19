@@ -173,6 +173,71 @@ transpose () {
 	done
 }
 
+multiply () {
+	# Check if both matrices exist
+	if [[ -e "$1" && -e "$2" ]]; then
+		FILE1=$1
+		FILE2=$2
+	elif [[ !(-e "$1") ]]; then
+		echo "$1 does not exist!" 1>&2
+		exit 1
+	elif [[ !(-e "$2") ]]; then
+		echo "$2 does not exist!" 1>&2
+		exit 1
+	fi
+
+	# Check to see if the number of columns of the 1st matrix equals the number of rows of the 2nd matrix
+	if [[ `dims $FILE1 | cut -d " " -f 2` == `dims $FILE2 | cut -d " " -f 1` ]]; then
+		# Use 2D arrays (dictionary) to perform calculations
+		declare -A matrixA
+		declare -A matrixB
+
+		# Build first array
+		rowA=0
+		while read line; do
+			colA=0
+			for i in $line; do
+				matrixA[$rowA,$colA]=$i
+				(( colA++ ))
+			done
+			(( rowA++ ))
+		done < "$FILE1"
+
+		# Build second array
+		rowB=0
+		while read line; do
+			colB=0
+			for i in $line; do
+				matrixB[$rowB,$colB]=$i
+				(( colB++ ))
+			done
+			(( rowB++ ))
+		done < "$FILE2"
+
+		# V1
+		for (( i = 0; i < $rowA; i++ )); do
+			for (( j = 0; j < $colB; j++ )); do
+				mult=0
+				for (( k = 0; k < $colA; k++ )); do
+					mult="$(( mult + ${matrixA[$i,$k]} * ${matrixB[$k,$j]} ))"
+					# echo "(( ${matrixA[$i,$k]} * ${matrixB[$k,$j]} )) = $mult"
+				done
+				echo -en "$mult"
+				if [[ $j -lt $colB-1 ]]; then
+					echo -en "\t"
+				fi
+			done
+			echo
+		done
+
+		return 0
+	else
+		# Print error to stderr
+		echo "Number of columns of the 1st matrix must equal to the number of rows of the 2nd one!" 1>&2
+		exit 2
+	fi
+}
+
 # Switch statement to select function
 case $1 in
 	"dims")
@@ -205,6 +270,14 @@ case $1 in
 			exit 3
 		else
 			transpose $2
+		fi
+		;;
+	"multiply")
+		if [[ $# -gt 3 ]]; then
+			echo "Too many args!" 1>&2
+			exit 3
+		else
+			multiply $2 $3
 		fi
 		;;
 	*)
