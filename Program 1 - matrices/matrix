@@ -214,13 +214,12 @@ multiply () {
 			(( rowB++ ))
 		done < "$FILE2"
 
-		# V1
+		# Traverse matrices, and compute the product
 		for (( i = 0; i < $rowA; i++ )); do
 			for (( j = 0; j < $colB; j++ )); do
 				mult=0
 				for (( k = 0; k < $colA; k++ )); do
 					mult="$(( mult + ${matrixA[$i,$k]} * ${matrixB[$k,$j]} ))"
-					# echo "(( ${matrixA[$i,$k]} * ${matrixB[$k,$j]} )) = $mult"
 				done
 				echo -en "$mult"
 				if [[ $j -lt $colB-1 ]]; then
@@ -242,7 +241,7 @@ multiply () {
 case $1 in
 	"dims")
 		if [[ $# -gt 2 ]]; then
-			echo "Too many args!" 1>&2
+			echo "Too many args!" 1>&2	# If user gave too any arguments, throw error to stderr
 			exit 3
 		else
 			dims $2
@@ -250,7 +249,7 @@ case $1 in
 		;;
 	"add")
 		if [[ $# -gt 3 ]]; then
-			echo "Too many args!" 1>&2
+			echo "Too many args!" 1>&2	# If user gave too any arguments, throw error to stderr
 			exit 3
 		else
 			add $2 $3
@@ -258,7 +257,7 @@ case $1 in
 		;;
 	"mean")
 		if [[ $# -gt 2 ]]; then
-			echo "Too many args!" 1>&2
+			echo "Too many args!" 1>&2	# If user gave too any arguments, throw error to stderr
 			exit 3
 		else
 			mean $2
@@ -266,7 +265,7 @@ case $1 in
 		;;
 	"transpose")
 		if [[ $# -gt 2 ]]; then
-			echo "Too many args!" 1>&2
+			echo "Too many args!" 1>&2	# If user gave too any arguments, throw error to stderr
 			exit 3
 		else
 			transpose $2
@@ -274,13 +273,14 @@ case $1 in
 		;;
 	"multiply")
 		if [[ $# -gt 3 ]]; then
-			echo "Too many args!" 1>&2
+			echo "Too many args!" 1>&2	# If user gave too any arguments, throw error to stderr
 			exit 3
 		else
 			multiply $2 $3
 		fi
 		;;
 	*)
+		# If user did not specify function, throw error to stderr
 		echo -e "${GREEN}$1${ENDC} is not a recognized command!" 1>&2
 		echo "To use the matrix script, type ./matrix OPERATION [ARGUMENT]..." 1>&2
 		echo -e "\tmatrix dims [MATRIX]\n\tmatrix transpose [MATRIX]\n\tmatrix mean [MATRIX]\n\tmatrix add MATRIX_LEFT MATRIX_RIGHT\n\tmatrix multiply MATRIX_LEFT MATRIX_RIGHT" 1>&2
