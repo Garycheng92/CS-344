@@ -126,7 +126,7 @@ mean () {
 		for (( j = 0; j < $row; j++ )); do
 			sum=$(( sum + ${matrixA[$j,$i]} ))
 		done
-		echo -en "$(( $sum/$row ))"
+		echo -en "$(( ($sum + ($row/2)*( ($sum>0)*2-1 )) / $row ))"
 		if [[ $i -lt $col-1 ]]; then
 			echo -en "\t"
 		fi
