@@ -3,6 +3,10 @@
 # 1/15/20
 # cs344 hw1
 
+# Font colors
+GREEN='\033[92m'
+ENDC='\033[0m'
+
 # dims() will print out the dimensions of the matrix (row col)
 # $ ./matrix dims [MATRIX]
 dims () {
@@ -204,5 +208,9 @@ case $1 in
 		fi
 		;;
 	*)
+		echo -e "${GREEN}$1${ENDC} is not a recognized command!" 1>&2
+		echo "To use the matrix script, type ./matrix OPERATION [ARGUMENT]..." 1>&2
+		echo -e "\tmatrix dims [MATRIX]\n\tmatrix transpose [MATRIX]\n\tmatrix mean [MATRIX]\n\tmatrix add MATRIX_LEFT MATRIX_RIGHT\n\tmatrix multiply MATRIX_LEFT MATRIX_RIGHT" 1>&2
+		exit 3
 		;;
 esac
