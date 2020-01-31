@@ -20,11 +20,12 @@ int isGraphValid (Room* roomList);
 int connectionExists (Room room, int r);
 
 int i, j;
-/*const char* names[] = {"Crowther", "Dungeon", "PLUGH", "PLOVER", "twisty", "XYZZY", "Zork"};
-*/const char* names[] = {"RoomA", "RoomB", "RoomC", "RoomD", "RoomE", "RoomF", "RoomG"};
-
+const char* names[] = {"Crowther", "Dungeon", "PLUGH", "PLOVER", "twisty", "XYZZY", "Zork"};
+/*const char* names[] = {"RoomA", "RoomB", "RoomC", "RoomD", "RoomE", "RoomF", "RoomG"};
+*/
 void main(int argc, char const *argv[]) {
-	buildStructs();
+	Room* myR = buildStructs();
+	free(myR);
 }
 
 Room* buildStructs() {
@@ -58,11 +59,11 @@ Room* buildStructs() {
 			while (connectionExists(roomList[w], r) == 1 || r == w || roomList[r].numOfConnections >= 6) {
 				if (roomList[w].numOfConnections >= 6)
 					break;
-				printf("%s is already connected to %s\n", roomList[w].name, roomList[r].name);
-				r = randNum(0, 6);
+/*				printf("%s is already connected to %s: TC = %d\n", roomList[w].name, roomList[r].name, roomList[w].numOfConnections);
+*/				r = randNum(0, 6);
 			}
-			printf("[%d][%d] Connecting %s with %s: TC = %d\n", w, r, roomList[w].name, roomList[r].name, roomList[w].numOfConnections);
-			roomList[w].connections[roomList[w].numOfConnections] = r;
+/*			printf("[%d][%d] Connecting %s with %s: TC = %d\n", w, r, roomList[w].name, roomList[r].name, roomList[w].numOfConnections);
+*/			roomList[w].connections[roomList[w].numOfConnections] = r;
 			roomList[r].connections[roomList[r].numOfConnections] = w;
 			roomList[w].numOfConnections++;
 			roomList[r].numOfConnections++;
