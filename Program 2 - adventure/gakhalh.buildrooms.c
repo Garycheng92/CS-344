@@ -18,11 +18,13 @@ int randNum(int lower, int upper);
 void printRooms(Room* roomList);
 int isGraphValid (Room* roomList);
 int connectionExists (Room room, int r);
+int* pickNames(char** names);
+int isInList(int* arr, int num, int len);
 
 int i, j;
-const char* names[] = {"Crowther", "Dungeon", "PLUGH", "PLOVER", "twisty", "XYZZY", "Zork"};
-/*const char* names[] = {"RoomA", "RoomB", "RoomC", "RoomD", "RoomE", "RoomF", "RoomG"};
-*/
+/*char* names[] = {"Crowther", "Dungeon", "PLUGH", "PLOVER", "twisty", "XYZZY", "Zork"};*/
+char* names[] = {"RoomA", "RoomB", "RoomC", "RoomD", "RoomE", "RoomF", "RoomG", "RoomH", "RoomI", "RoomJ"};
+
 void main(int argc, char const *argv[]) {
 	Room* myR = buildStructs();
 	free(myR);
@@ -32,11 +34,13 @@ Room* buildStructs() {
 	srand(time(0));
 
 	Room* roomList = malloc(7 * sizeof(Room));
+	int* randNames = pickNames(names);
 
 	for (i = 0; i < 7; ++i) {
-		strcpy(roomList[i].name, names[i]);
+		strcpy(roomList[i].name, names[randNames[i]]);
 		roomList[i].numOfConnections = 0;
 	}
+	free(randNames);
 
 	int num = randNum(0,6);
 	roomList[num].type = 's';
@@ -105,6 +109,33 @@ int isGraphValid (Room* roomList) {
 int connectionExists (Room room, int r) {
 	for (i = 0; i < room.numOfConnections; ++i) {
 		if (room.connections[i] == r)
+			return 1;
+	}
+	return 0;
+}
+
+int* pickNames(char** names){
+	int l;
+
+	int* numList = malloc(7 * sizeof(int));
+	for (l = 0; l<7; ++l) {
+		numList[l] = -1;
+	}
+
+	int num = randNum(0,9);
+	for (l = 0; l < 7; ++l) {
+		while (isInList(numList, num, 7) == 1) {
+			num = randNum(0,9);
+		}
+		numList[l] = num;
+	}
+	return numList;
+}
+
+int isInList(int* arr, int num, int len){
+	int c;
+	for (c = 0; c < len; ++c) {
+		if (num == arr[c])
 			return 1;
 	}
 	return 0;
