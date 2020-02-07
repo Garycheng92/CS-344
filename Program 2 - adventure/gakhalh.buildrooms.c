@@ -155,7 +155,7 @@ int makeFiles(Room* roomList) {
 	char PID[20];
 	sprintf(PID, "%d", getpid());
 	strcat(dirName, PID);
-	int check = mkdir(dirName, 0660);
+	int check = mkdir(dirName, 0777);
 
 	if (!check) {
 		char PATH[100];
