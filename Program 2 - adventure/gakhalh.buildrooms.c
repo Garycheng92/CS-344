@@ -151,11 +151,11 @@ int isInList(int* arr, int num, int len){
 }
 
 int makeFiles(Room* roomList) {
-	char dirName[100] = "gakhalh.buildrooms.";
+	char dirName[100] = "gakhalh.rooms.";
 	char PID[20];
 	sprintf(PID, "%d", getpid());
 	strcat(dirName, PID);
-	int check = mkdir(dirName);
+	int check = mkdir(dirName, 0700);
 
 	if (!check) {
 		char PATH[100];
