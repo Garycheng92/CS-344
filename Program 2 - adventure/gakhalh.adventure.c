@@ -3,7 +3,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <regex.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,21 +13,22 @@ typedef struct {
 	char type; /* can be s, m, or e */
 } Room;
 
+
 char* getDir();
 Room* buildMap(char* dir);
 void printRooms(Room* roomList);
 int findIndex(Room* roomList, char* str);
-void startGame(Room* roomList);
+int startGame(Room* roomList);
 int getStartRoom(Room* roomList);
 void printPossibleConnections(Room* roomList, int);
 int isConnected(Room* roomList, char* str, int currentRoom);
 void printHistory(Room* roomList, int* arr, int count);
 
 int main(int argc, char const *argv[]) {
-	startGame(buildMap(getDir()));
+	return startGame(buildMap(getDir()));
 }
 
-void startGame(Room* roomList) {
+int startGame(Room* roomList) {
 	int currentRoom = getStartRoom(roomList), exit = 0, askAgain = 0, count = 0;
 	int history[1000];
 	char readIn[100], str[100];
@@ -40,18 +40,21 @@ void startGame(Room* roomList) {
 			printf("POSSIBLE CONNECTIONS: ");
 			printPossibleConnections(roomList, currentRoom);
 			printf("WHERE TO? >");
-			fgets(readIn, 100, stdin);
-			sscanf(readIn, "%s", str);
+			if (fgets(readIn, 100, stdin) == NULL) {
+				return -1;
+			}
+			else
+				sscanf(readIn, "%s", str);
 
 			if (findIndex(roomList, str) == -1 || isConnected(roomList, str, currentRoom) == -1)
-				printf("\nHUH? I DON’T UNDERSTAND THAT ROOM. TRY AGAIN.\n\n");
+				printf("\nHUH? I DON’T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
 			else {
 				askAgain = 1;
 				currentRoom = findIndex(roomList, str);
 				history[count] = currentRoom;
 				count++;
-				printf("\n");
 			}
+			printf("\n");
 		}
 		if (roomList[currentRoom].type == 'e') {
 			printf("YOU HAVE FOUND THE END ROOM. CONGRATULATIONS!\n");
@@ -62,6 +65,7 @@ void startGame(Room* roomList) {
 		else
 			askAgain = 0;
 	}
+	return 0;
 }
 
 void printHistory(Room* roomList, int* arr, int count) {
