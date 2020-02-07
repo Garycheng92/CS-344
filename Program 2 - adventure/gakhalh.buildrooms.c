@@ -155,14 +155,14 @@ int makeFiles(Room* roomList) {
 	char PID[20];
 	sprintf(PID, "%d", getpid());
 	strcat(dirName, PID);
-	int check = mkdir(dirName, 0700);
+	int check = mkdir(dirName, 0660);
 
 	if (!check) {
 		char PATH[100];
 		int i;
 		for (i = 0; i < 7; ++i) {
 			sprintf(PATH, "./%s/%s_room", dirName, roomList[i].name);
-			FILE *fp = fopen(PATH , "w");
+			FILE *fp = fopen(PATH,  "w+");
 			fprintf(fp, "ROOM NAME: %s\n", roomList[i].name);
 			int j;
 			for (j = 0; j < roomList[i].numOfConnections; ++j) {
