@@ -5,7 +5,10 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <pthread.h>
 
+/*Struct that represents a single room*/
 typedef struct {
 	char name[9];
 	int connections[6];
@@ -13,7 +16,9 @@ typedef struct {
 	char type; /* can be s, m, or e */
 } Room;
 
+pthread_mutex_t mtx;
 
+/*Prototypes used*/
 char* getDir();
 Room* buildMap(char* dir);
 void printRooms(Room* roomList);
@@ -23,66 +28,121 @@ int getStartRoom(Room* roomList);
 void printPossibleConnections(Room* roomList, int);
 int isConnected(Room* roomList, char* str, int currentRoom);
 void printHistory(Room* roomList, int* arr, int count);
+void* getTime();
+void mutexThread();
+void printTime();
 
 int main(int argc, char const *argv[]) {
 	return startGame(buildMap(getDir()));
 }
 
+/*Start game function will begin the game after it is given the room data structure*/
 int startGame(Room* roomList) {
+	/*Vars used:
+		current room is the index of the current room the player is in
+		exit lets the function know when to end the game
+		askAgain will keep asking the user for an input until they give a valid result
+		count keeps track of how many steps the user takes
+	*/
 	int currentRoom = getStartRoom(roomList), exit = 0, askAgain = 0, count = 0;
 	int history[1000];
 	char readIn[100], str[100];
 	int valid = 0;
 
+	/*Run the game until the exit flag is 1*/
 	while (exit == 0) {
+		/*Keep asking the user for an valid input*/
 		while (askAgain == 0) {
-			printf("CURRENT LOCATION: %s\n", roomList[currentRoom].name);
-			printf("POSSIBLE CONNECTIONS: ");
+			printf("CURRENT LOCATION: %s\n", roomList[currentRoom].name);	/*print current location*/
+			printf("POSSIBLE CONNECTIONS: ");								/*print the possible connections*/
 			printPossibleConnections(roomList, currentRoom);
 			printf("WHERE TO? >");
-			if (fgets(readIn, 100, stdin) == NULL) {
-				return -1;
+			if (fgets(readIn, 100, stdin) == NULL) {						/*Ask user for input*/
+				return -1;													/*If ctl-d is pressed, exit game*/
 			}
 			else
-				sscanf(readIn, "%s", str);
+				sscanf(readIn, "%s", str);									/*Snip the newline off readIn*/
 
-			if (findIndex(roomList, str) == -1 || isConnected(roomList, str, currentRoom) == -1)
+			if (strcmp(str, "time") == 0) {									/*Print time if user asks*/
+				mutexThread();
+				printTime();
+			}
+			else if (findIndex(roomList, str) == -1 || isConnected(roomList, str, currentRoom) == -1)	/*Check to see if the input is a valid room*/
 				printf("\nHUH? I DON’T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
 			else {
-				askAgain = 1;
-				currentRoom = findIndex(roomList, str);
-				history[count] = currentRoom;
-				count++;
+				askAgain = 1;								/*If input is valid, exit this while loop*/
+				currentRoom = findIndex(roomList, str);		/*Update the current room*/
+				history[count] = currentRoom;				/*Add the current room index to the users path*/	
+				count++;									/*Increment the count*/
 			}
 			printf("\n");
 		}
-		if (roomList[currentRoom].type == 'e') {
+		if (roomList[currentRoom].type == 'e') {			/*If the current room is the end, print success and the useres path*/
 			printf("YOU HAVE FOUND THE END ROOM. CONGRATULATIONS!\n");
 			printf("YOU TOOK %d STEPS. YOUR PATH TO VICTORY WAS:\n", count);
 			printHistory(roomList, history, count);
 			exit = 1;
 		}
 		else
-			askAgain = 0;
+			askAgain = 0;									/*Otherwise keep playing the game, and ask for another input*/
 	}
 	return 0;
 }
 
+/*getTime will put the current time and data into a file called currentTime.txt*/
+void* getTime(){
+	FILE* timeFile = fopen("currentTime.txt", "w+");		/*Make the file*/
+	char buf[100];
+	struct tm *sTm;
+	time_t now = time (0);
+	sTm = gmtime (&now);
+	strftime (buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", sTm);	/*Format current time*/
+	fputs(buf, timeFile);									/*Put formatted time into the file*/
+	fclose(timeFile);
+}
+
+/*printTime will read from a file - currentTime.txt - and print it out to the screen*/
+void printTime(){
+	FILE* timeFile = fopen("currentTime.txt", "r+");
+	char buf[100];
+	if(timeFile == NULL)
+		perror("currentTime.txt DOES NOT EXIST!!\n");		/*If file DNE, print err*/
+	else {
+		fgets(buf, 100, timeFile);	/*Read from timeFile*/
+		printf("\n%s\n", buf);		/*Print to screen*/
+		fclose(timeFile);
+	}
+}
+
+/*mutexThread will spwn new thread and lock/unlock accordingly*/
+void mutexThread() {
+	pthread_t threaded;					/*set thread*/
+	pthread_mutex_init(&mtx, NULL);
+	pthread_mutex_lock(&mtx);			/*Lock thread*/
+	int tid = pthread_create(&threaded, NULL, getTime, NULL);	/*spawn new thread on getTime*/
+	pthread_mutex_unlock(&mtx);			/*Un lock thread*/
+	pthread_mutex_destroy(&mtx);		/*Used this website for help: http://www.yolinux.com/TUTORIALS/LinuxTutorialPosixThreads.html*/
+	usleep(50);
+}
+
+/*printHistory will print the path the user has taken during the game*/
 void printHistory(Room* roomList, int* arr, int count) {
 	int i;
-	for (i = 0; i < count; ++i) {
+	for (i = 0; i < count; ++i) {				/*Loop through history array and print the names of the rooms*/
 		printf("%s\n", roomList[arr[i]].name);
 	}
 }
 
+/*isConnected will return 1 if the string is a connected room to - else 0*/
 int isConnected(Room* roomList, char* str, int currentRoom) {
-	int i, lookingFor = findIndex(roomList, str);
+	int i, lookingFor = findIndex(roomList, str);	/*init i and the index we are looking for*/
 	for (i = 0; i < roomList[currentRoom].numOfConnections; ++i)
 		if (roomList[currentRoom].connections[i] == lookingFor)
 			return 1;
-	return -1;
+	return -1;	/*return -1 if we could not find the name*/
 }
 
+/*printPossibleConnections will print out all the */
 void printPossibleConnections(Room* roomList, int currentRoom) {
 	char str[200];
 	int i;
