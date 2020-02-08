@@ -70,7 +70,7 @@ Room* buildStructs() {
 					break;
 				r = randNum(0, 6);
 			}
-			roomList[w].connections[roomList[w].numOfConnections] = r;
+			roomList[w].connections[roomList[w].numOfConnections] = r;		/*Connect the current room, and the */
 			roomList[r].connections[roomList[r].numOfConnections] = w;
 			roomList[w].numOfConnections++;
 			roomList[r].numOfConnections++;
@@ -105,6 +105,7 @@ void printRooms(Room* roomList) {
 	}
 }
 
+/*isGraphValid will check if each node has 3 or more connections*/
 int isGraphValid (Room* roomList) {
 	int i;
 	for (i = 0; i < 7; ++i) {
@@ -114,6 +115,7 @@ int isGraphValid (Room* roomList) {
 	return 1;
 }
 
+/*connectionExists checks if a room exists as a connection*/
 int connectionExists (Room room, int r) {
 	int i;
 	for (i = 0; i < room.numOfConnections; ++i) {
@@ -123,44 +125,42 @@ int connectionExists (Room room, int r) {
 	return 0;
 }
 
+/*pick names will return a list of non-repeating numbers between 0 and 9 inclusive*/
 int* pickNames(char** names){
-	int l;
-
-	int* numList = malloc(7 * sizeof(int));
-	for (l = 0; l<7; ++l) {
+	int l, *numList = malloc(7 * sizeof(int));
+	for (l = 0; l<7; ++l)							/*Set each number to -1*/
 		numList[l] = -1;
-	}
-
 	int num = randNum(0,9);
-	for (l = 0; l < 7; ++l) {
-		while (isInList(numList, num, 7) == 1) {
+	for (l = 0; l < 7; ++l) {						/*Assign random numbers*/
+		while (isInList(numList, num, 7) == 1)
 			num = randNum(0,9);
-		}
 		numList[l] = num;
 	}
-	return numList;
+	return numList;									/*Return the list*/
 }
 
+/*isInList is a help for pickNames, and will check if if the number is already in the array*/
 int isInList(int* arr, int num, int len){
 	int c;
-	for (c = 0; c < len; ++c) {
+	for (c = 0; c < len; ++c)
 		if (num == arr[c])
 			return 1;
-	}
 	return 0;
 }
 
+/*makeFiles will make the directory and files based on the room graph*/
 int makeFiles(Room* roomList) {
 	char dirName[100] = "gakhalh.rooms.";
 	char PID[20];
 	sprintf(PID, "%d", getpid());
 	strcat(dirName, PID);
-	int check = mkdir(dirName, 0777);
+	int check = mkdir(dirName, 0777);	/*Make dir and set permissions*/
 
 	if (!check) {
 		char PATH[100];
 		int i;
 		for (i = 0; i < 7; ++i) {
+			/*Print out name, connections number of connections, and type to each file*/
 			sprintf(PATH, "./%s/%s_room", dirName, roomList[i].name);
 			FILE *fp = fopen(PATH,  "w+");
 			fprintf(fp, "ROOM NAME: %s\n", roomList[i].name);
@@ -179,5 +179,5 @@ int makeFiles(Room* roomList) {
 		return 1;
 	}
 	else
-		return 0;
+		return 0;	/*If failed, return 0*/
 }

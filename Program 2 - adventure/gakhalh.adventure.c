@@ -21,7 +21,6 @@ pthread_mutex_t mtx;
 /*Prototypes used*/
 char* getDir();
 Room* buildMap(char* dir);
-void printRooms(Room* roomList);
 int findIndex(Room* roomList, char* str);
 int startGame(Room* roomList);
 int getStartRoom(Room* roomList);
@@ -94,8 +93,8 @@ void* getTime(){
 	FILE* timeFile = fopen("currentTime.txt", "w+");		/*Make the file*/
 	char buf[100];
 	struct tm *sTm;
-	time_t now = time (0);
-	sTm = gmtime (&now);
+	time_t now = time(0);
+	sTm = localtime(&now);
 	strftime (buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", sTm);	/*Format current time*/
 	fputs(buf, timeFile);									/*Put formatted time into the file*/
 	fclose(timeFile);
@@ -122,7 +121,7 @@ void mutexThread() {
 	int tid = pthread_create(&threaded, NULL, getTime, NULL);	/*spawn new thread on getTime*/
 	pthread_mutex_unlock(&mtx);			/*Un lock thread*/
 	pthread_mutex_destroy(&mtx);		/*Used this website for help: http://www.yolinux.com/TUTORIALS/LinuxTutorialPosixThreads.html*/
-	usleep(50);
+	usleep(5000);
 }
 
 /*printHistory will print the path the user has taken during the game*/
@@ -142,26 +141,27 @@ int isConnected(Room* roomList, char* str, int currentRoom) {
 	return -1;	/*return -1 if we could not find the name*/
 }
 
-/*printPossibleConnections will print out all the */
+/*printPossibleConnections will print out all the connections to the current room*/
 void printPossibleConnections(Room* roomList, int currentRoom) {
-	char str[200];
 	int i;
-	for (i = 0; i < roomList[currentRoom].numOfConnections; ++i) {
-		printf("%s", roomList[roomList[currentRoom].connections[i]].name);
+	for (i = 0; i < roomList[currentRoom].numOfConnections; ++i) {			/*Loop through all the connected rooms and print the names*/
+		printf("%s", roomList[roomList[currentRoom].connections[i]].name);	/*If we are not on the last room print , */
 		if (i < roomList[currentRoom].numOfConnections-1)
 			printf(", ");
 	}
 	printf(".\n");
 }
 
+/*getStartRoom will return the index of the starting room*/
 int getStartRoom(Room* roomList) {
 	int i;
-	for (i = 0; i < 7; ++i)
-		if (roomList[i].type == 's')
+	for (i = 0; i < 7; ++i)				/*Loop through the whole list*/
+		if (roomList[i].type == 's')	/*Return the index*/
 			return i;
-	return -1;
+	return -1;							/*If not found return -1*/
 }
 
+/*getDir will return the name of most recently made dir*/
 char* getDir() {
 	struct dirent *de;
 	struct stat buf;
@@ -169,17 +169,18 @@ char* getDir() {
 	char *dirName;
 	long newest = -1;
 
-	while ((de = readdir(dr)) != NULL) {
+	while ((de = readdir(dr)) != NULL) {	/*go through each directory*/
 		stat(de->d_name, &buf);
-		if (buf.st_mtime >= newest && de->d_name[13] == '.') {
+		if (buf.st_mtime >= newest && de->d_name[13] == '.') {	/*if the name is gakhalh.buildrooms.<PID> then check the mtime*/
 			newest = buf.st_mtime;
 			dirName = de->d_name;
 		}
 	}
 	closedir(dr);
-	return dirName;
+	return dirName;		/*Return the latest directory*/
 }
 
+/*buildMap will read from the files created from gakhal.buildrooms.c and put it into a data structure*/
 Room* buildMap(char* dir) {
 	struct dirent *de;
 	char PATH[100], filePATH[500], line[1000], tmp[100];
@@ -187,21 +188,22 @@ Room* buildMap(char* dir) {
 	Room* roomList = malloc(7 * sizeof(Room));
 	DIR *dr = opendir(PATH);
 
+	/*Go through each file and assign the name, type and number of connections to the list of rooms*/
 	int i = 0;
 	while ((de = readdir(dr)) != NULL) {
-		if (de->d_name[0] == 'R') {
+		if (de->d_name[0] == 'R') {							/*If the file name starts with R*/
 			sprintf(filePATH, "%s%s", PATH, de->d_name);
-			FILE* fp = fopen(filePATH, "r");
-			while (fgets(line, 1000, fp) != NULL) {
-				sscanf(line, "%*[^:]: %[^]%*[^\n]", tmp);
-				if (line[5] == 'N') {
-					strcpy(roomList[i].name, tmp);
-					roomList[i].numOfConnections = 0;
+			FILE* fp = fopen(filePATH, "r");				/*Open the file*/
+			while (fgets(line, 1000, fp) != NULL) {			/*Read each line of the file*/
+				sscanf(line, "%*[^:]: %[^]%*[^\n]", tmp);	/*Snip everything off befre the ': '*/
+				if (line[5] == 'N') {						/*If the line you are reading is ROOM NAME*/
+					strcpy(roomList[i].name, tmp);			/*Put into struct*/
+					roomList[i].numOfConnections = 0;		/*Set num of rooms to 0*/
 				}
-				else if (line[5] == 'T')
+				else if (line[5] == 'T')					/*If the line you are reading is ROOM TYPE*/
 					if (tmp[0] == 'S')
 						roomList[i].type = 's';
-					else if (tmp[0] == 'E')
+					else if (tmp[0] == 'E')					/*Assign type*/
 						roomList[i].type = 'e';
 					else
 						roomList[i].type = 'm';
@@ -211,13 +213,14 @@ Room* buildMap(char* dir) {
 		}
 	}
 
+	/*Iterate through each file again, to assign the connections*/
 	i = 0;
 	dr = opendir(PATH);
 	while ((de = readdir(dr)) != NULL) {
 		if (de->d_name[0] == 'R') {
 			sprintf(filePATH, "%s%s", PATH, de->d_name);
-			FILE* fp = fopen(filePATH, "r");
-			while (fgets(line, 1000, fp) != NULL) {
+			FILE* fp = fopen(filePATH, "r");				/*Open each file*/
+			while (fgets(line, 1000, fp) != NULL) {			/*Read each line*/
 				sscanf(line, "%*[^:]: %[^]%*[^\n]", tmp);
 				if (line[0] == 'C') {
 					roomList[i].connections[roomList[i].numOfConnections] = findIndex(roomList, tmp);
@@ -232,26 +235,11 @@ Room* buildMap(char* dir) {
 	return roomList;
 }
 
+/*findIndex will return the index of the room you are trying to search*/
 int findIndex(Room* roomList, char* str) {
 	int i;
-	for (i = 0; i < 7; ++i)
-		if (strcmp(roomList[i].name, str) == 0)
-			return i;
-	return -1;
-}
-
-void printRooms(Room* roomList) {
-	int i,j;
-	for (i = 0; i < 7; ++i) {
-		printf("ROOM NAME: %s\n", roomList[i].name);
-		for (j = 0; j < roomList[i].numOfConnections; ++j)
-			printf("CONNECTION %d: %s\n", j+1, roomList[roomList[i].connections[j]].name); 
-		if (roomList[i].type == 's')
-			printf("ROOM TYPE: START_ROOM\n");
-		else if (roomList[i].type == 'e')
-			printf("ROOM TYPE: END_ROOM\n");
-		else
-			printf("ROOM TYPE: MID_ROOM\n");
-		printf("\n");
-	}
+	for (i = 0; i < 7; ++i)		/*Loop through each rooms*/
+		if (strcmp(roomList[i].name, str) == 0)	/*If room name matches the string given*/
+			return i;							/*Return the index*/
+	return -1;									/*Else return -1*/
 }
