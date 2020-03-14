@@ -14,6 +14,7 @@ void main(int argc, char const *argv[]) {
 	socklen_t sizeOfClientInfo;
 	char buffer[256];
 	struct sockaddr_in serverAddress, clientAddress;
+	pid_t pid;
 
 	if (argc < 2) { fprintf(stderr,"USAGE: %s port\n", argv[0]); exit(1); } // Check usage & args
 
@@ -33,96 +34,102 @@ void main(int argc, char const *argv[]) {
 		error("ERROR on binding");
 	listen(listenSocketFD, 5); // Flip the socket on - it can now receive up to 5 connections
 
-	// Accept a connection, blocking if one is not available until one connects
-	sizeOfClientInfo = sizeof(clientAddress); // Get the size of the address for the client that will connect
-	establishedConnectionFD = accept(listenSocketFD, (struct sockaddr *)&clientAddress, &sizeOfClientInfo); // Accept
-	if (establishedConnectionFD < 0) error("ERROR on accept");
+	while(1) {
+		// Accept a connection, blocking if one is not available until one connects
+		sizeOfClientInfo = sizeof(clientAddress); // Get the size of the address for the client that will connect
+		establishedConnectionFD = accept(listenSocketFD, (struct sockaddr *)&clientAddress, &sizeOfClientInfo); // Accept
+		if (establishedConnectionFD < 0) error("ERROR on accept");
 
-	// Get the message from the client and display it
-	memset(buffer, '\0', 256);
-	charsRead = recv(establishedConnectionFD, buffer, 255, 0); // Read the client's message from the socket
-	if (charsRead < 0) error("ERROR reading from socket");
-	printf("SERVER: I received this from the client: \"%s\"\n", buffer);
+		pid = fork();
+		if (pid < 0) {
+			fprintf(stderr, "FORK ERROR\n");
+			exit(1);
+		}
 
-	// Send a Success message back to the client
-	charsRead = send(establishedConnectionFD, "I am the server, and I got your message", 39, 0); // Send success back
-	if (charsRead < 0) error("ERROR writing to socket");
+		if (pid == 0) {
+			// Get the message from the client and display it
+			memset(buffer, '\0', 256);
+			charsRead = recv(establishedConnectionFD, buffer, 255, 0); // Read the client's message from the socket
+			if (charsRead < 0) fprintf(stderr, "ERROR reading from socket");
+			// printf("SERVER: I received this from the client: \"%s\"\n", buffer);
 
-	// open file1
-	FILE * fp;
-	char * line = NULL;
-	size_t len = 0;
-	ssize_t read;
+			// Send a Success message back to the client
+			charsRead = send(establishedConnectionFD, "I am the server, and I got your message", 39, 0); // Send success back
+			if (charsRead < 0) fprintf(stderr, "ERROR writing to socket");
 
-	fp = fopen(buffer, "r");
-	if (fp == NULL)
-		exit(EXIT_FAILURE);
+			// open file1
+			FILE * fp;
+			char * line = NULL;
+			size_t len = 0;
+			ssize_t read;
 
-	read = getline(&line, &len, fp);
-	char msg[strlen(line)];
-	strcpy(msg, line);
+			fp = fopen(buffer, "r");
+			if (fp == NULL)
+				exit(EXIT_FAILURE);
 
-	// Get the message from the client and display it
-	memset(buffer, '\0', 256);
-	charsRead = recv(establishedConnectionFD, buffer, 255, 0); // Read the client's message from the socket
-	if (charsRead < 0) error("ERROR reading from socket");
-	printf("SERVER: I received this from the client: \"%s\"\n", buffer);
+			read = getline(&line, &len, fp);
+			char msg[strlen(line)];
+			strcpy(msg, line);
 
-	// Send a Success message back to the client
-	charsRead = send(establishedConnectionFD, "I am the server, and I got your message", 39, 0); // Send success back
-	if (charsRead < 0) error("ERROR writing to socket");
+			// Get the message from the client and display it
+			memset(buffer, '\0', 256);
+			charsRead = recv(establishedConnectionFD, buffer, 255, 0); // Read the client's message from the socket
+			if (charsRead < 0) fprintf(stderr, "ERROR reading from socket");
+			// printf("SERVER: I received this from the client: \"%s\"\n", buffer);
 
-	// open file2
-	FILE * fp2;
-	char * line2 = NULL;
-	size_t len2 = 0;
-	ssize_t read2;
+			// Send a Success message back to the client
+			charsRead = send(establishedConnectionFD, "I am the server, and I got your message", 39, 0); // Send success back
+			if (charsRead < 0) fprintf(stderr, "ERROR writing to socket");
 
-	fp2 = fopen(buffer, "r");
-	if (fp2 == NULL)
-		exit(EXIT_FAILURE);
+			// open file2
+			FILE * fp2;
+			char * line2 = NULL;
+			size_t len2 = 0;
+			ssize_t read2;
 
-	read2 = getline(&line2, &len2, fp2);
-	char key[strlen(line2)];
-	strcpy(key, line2);
+			fp2 = fopen(buffer, "r");
+			if (fp2 == NULL)
+				exit(EXIT_FAILURE);
 
-	// printf("ctext is [%s]\n", encryptMessage(msg, key));
-	// printf("LINE.len[%ld], ctext.len[%ld]\n", strlen(line), strlen(encryptMessage(msg, key)));
+			read2 = getline(&line2, &len2, fp2);
+			char key[strlen(line2)];
+			strcpy(key, line2);
 
-	// Send a Success message back to the client
-	charsRead = send(establishedConnectionFD, encryptMessage(msg, key), strlen(line), 0); // Send success back
-	if (charsRead < 0) error("ERROR writing to socket");
+			// Send a Success message back to the client
+			charsRead = send(establishedConnectionFD, encryptMessage(msg, key), strlen(line), 0); // Send success back
+			if (charsRead < 0) error("ERROR writing to socket");
 
-	fclose(fp);
-	if (line)
-		free(line);
+			fclose(fp);
+			if (line)
+				free(line);
 
-	fclose(fp2);
-	if (line2)
-		free(line2);
-
-	close(establishedConnectionFD); // Close the existing socket which is connected to the client
+			fclose(fp2);
+			if (line2)
+				free(line2);
+		}
+		close(establishedConnectionFD); // Close the existing socket which is connected to the client
+	}
 	close(listenSocketFD); // Close the listening socket
 }
 
 char* encryptMessage(char* msg, char *key) {
 	if (strlen(key) < strlen(msg)) {
 		fprintf(stderr, "Error: key is too short!\n");
-		exit(0);
+		exit(1);
 	}
 
 	char *encryptMessage = malloc (sizeof (char) * strlen(msg)), emsg[strlen(msg)-1];
-	const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWQYZ ";
+	const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 
 	for (int i = 0; i < strlen(msg)-1; ++i) {
-		if (msg[i] == ' ' || (key[i] == ' '))
-			emsg[i] = ("%c", chars[(msg[i] - 6 + key[i] - 6) % 27]);
+		if (msg[i] == ' ' && (key[i] == ' '))
+			emsg[i] = ("%c", chars[((msg[i] - 6) + (key[i] - 6)) % 27]);
 		else if (msg[i] == ' ')
-			emsg[i] = ("%c", chars[(msg[i] - 6 + key[i] - 'A') % 27]);
+			emsg[i] = ("%c", chars[((msg[i] - 6) + (key[i] - 65)) % 27]);
 		else if (key[i] == ' ')
-			emsg[i] = ("%c", chars[(msg[i] - 'A' + key[i] - 6) % 27]);
+			emsg[i] = ("%c", chars[((msg[i] - 65) + (key[i] - 6)) % 27]);
 		else
-			emsg[i] = ("%c", chars[(msg[i] - 'A' + key[i] - 'A') % 27]);
+			emsg[i] = ("%c", chars[((msg[i] - 65) + (key[i] - 65)) % 27]);
 	}
 	emsg[strlen(msg)-1] = '\n';
 	emsg[strlen(msg)] = '\0';

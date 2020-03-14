@@ -14,10 +14,8 @@ decd: otp_dec_d.c
 	gcc -o otp_dec_d otp_dec_d.c
 all: keygen.c server.c client.c
 	gcc -o keygen keygen.c
-	gcc -o client client.c
-	gcc -o server server.c
 	gcc -o otp_enc otp_enc.c
-	gcc -o opt_enc_d opt_enc_d.c
+	gcc -o otp_enc_d otp_enc_d.c
 	gcc -o otp_dec otp_dec.c
 	gcc -o otp_dec_d otp_dec_d.c
 clean:

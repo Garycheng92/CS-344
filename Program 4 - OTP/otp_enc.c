@@ -29,7 +29,7 @@ void main(int argc, char const *argv[]) {
 	int socketFD, portNumber, charsWritten, charsRead;
 	struct sockaddr_in serverAddress;
 	struct hostent* serverHostInfo;
-	char buffer[256];
+	char buffer[100000];
 
 	// Set up the server address struct
 	memset((char*)&serverAddress, '\0', sizeof(serverAddress)); // Clear out the address struct
@@ -57,7 +57,7 @@ void main(int argc, char const *argv[]) {
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
-	printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
+	// printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
 
 	// Send second file to server
 	charsWritten = send(socketFD, argv[2], strlen(argv[2]), 0); // Write to the server
@@ -68,13 +68,27 @@ void main(int argc, char const *argv[]) {
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
-	printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
+	// printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
+
+	FILE *fp = fopen(argv[1], "r+");
+	fseek(fp, 0L, SEEK_END);
+	long int sizeofFile = ftell(fp);
 
 	// Get return message from server
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
-	printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
+	// printf("SIZE OF FILE: %ld\nBUFFER: %ld\n", sizeofFile, strlen(buffer));
+	sizeofFile -= strlen(buffer);
+	printf("%s", buffer);
+
+	while (sizeofFile != 0) {
+		memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
+		charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
+		if (charsRead < 0) error("CLIENT: ERROR reading from socket");
+		sizeofFile -= strlen(buffer);
+		printf("%s", buffer);
+	}
 
 	close(socketFD); // Close the socket
 }
