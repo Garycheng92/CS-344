@@ -95,10 +95,7 @@ void main(int argc, char const *argv[]) {
 			read2 = getline(&line2, &len2, fp2);
 			char key[strlen(line2)];
 			strcpy(key, line2);
-
-			// printf("ctext is [%s]\n", encryptMessage(msg, key));
-			// printf("LINE.len[%ld], ctext.len[%ld]\n", strlen(line), strlen(encryptMessage(msg, key)));
-
+			
 			// Send a Success message back to the client
 			charsRead = send(establishedConnectionFD, decryptMessage(msg, key), strlen(line), 0); // Send success back
 			if (charsRead < 0) error("ERROR writing to socket");
@@ -126,7 +123,11 @@ char* decryptMessage(char* msg, char *key) {
 	const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 
 	for (int i = 0; i < strlen(msg)-1; ++i) {
-		if (msg[i] == ' ' && (key[i] == ' ')){
+		if (msg[i] < 65 || msg[i] > 90 || msg[i] != ' '){
+			fprintf(stderr, "error: input contains bad characters");
+			exit(1);
+		}
+		else if (msg[i] == ' ' && (key[i] == ' ')){
 			if ((msg[i] - 6) - (key[i] - 6) < 0)
 				emsg[i] = ("%c", chars[((((msg[i] - 6) - (key[i] - 6)) + 27) % 27)]);
 			else

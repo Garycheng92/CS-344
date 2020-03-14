@@ -83,9 +83,11 @@ void main(int argc, char const *argv[]) {
 	printf("%s", buffer);
 
 	while (sizeofFile != 0) {
+		if (strlen(buffer) == 0)
+			break;
 		memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 		charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
-		if (charsRead < 0) error("CLIENT: ERROR reading from socket");
+		if (charsRead < 0) error("CLIENT: ERROR reading from socket\n");
 		sizeofFile -= strlen(buffer);
 		printf("%s", buffer);
 	}

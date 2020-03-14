@@ -122,7 +122,11 @@ char* encryptMessage(char* msg, char *key) {
 	const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 
 	for (int i = 0; i < strlen(msg)-1; ++i) {
-		if (msg[i] == ' ' && (key[i] == ' '))
+		if (msg[i] < 65 || msg[i] > 90 || msg[i] != ' '){
+			fprintf(stderr, "error: input contains bad characters");
+			exit(1);
+		}
+		else if (msg[i] == ' ' && (key[i] == ' '))
 			emsg[i] = ("%c", chars[((msg[i] - 6) + (key[i] - 6)) % 27]);
 		else if (msg[i] == ' ')
 			emsg[i] = ("%c", chars[((msg[i] - 6) + (key[i] - 65)) % 27]);
