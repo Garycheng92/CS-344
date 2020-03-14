@@ -1,3 +1,10 @@
+/*
+	Harinder Gakhal
+	CS 344 - Program 4
+	otp_enc_d.c
+	3/13/20
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+// Prototypes
 char* encryptMessage(char* msg, char *key);
 void error(const char *msg) { perror(msg); exit(1); } // Error function used for reporting issues
 
@@ -40,6 +48,7 @@ void main(int argc, char const *argv[]) {
 		establishedConnectionFD = accept(listenSocketFD, (struct sockaddr *)&clientAddress, &sizeOfClientInfo); // Accept
 		if (establishedConnectionFD < 0) error("ERROR on accept");
 
+		// For every new connection
 		pid = fork();
 		if (pid < 0) {
 			fprintf(stderr, "FORK ERROR\n");
@@ -99,6 +108,7 @@ void main(int argc, char const *argv[]) {
 			charsRead = send(establishedConnectionFD, encryptMessage(msg, key), strlen(line), 0); // Send success back
 			if (charsRead < 0) error("ERROR writing to socket");
 
+			// close open files
 			fclose(fp);
 			if (line)
 				free(line);
@@ -113,14 +123,17 @@ void main(int argc, char const *argv[]) {
 }
 
 char* encryptMessage(char* msg, char *key) {
+	// Check if key is shorter than message
 	if (strlen(key) < strlen(msg)) {
 		fprintf(stderr, "Error: key is too short!\n");
 		exit(1);
 	}
 
 	char *encryptMessage = malloc (sizeof (char) * strlen(msg)), emsg[strlen(msg)-1];
+	// Letter bank
 	const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 
+	// Add key to msg then mod by 27
 	for (int i = 0; i < strlen(msg)-1; ++i) {
 		if ((msg[i] < 65 || msg[i] > 90) && msg[i] != ' '){
 			fprintf(stderr, "error: input contains bad characters");
@@ -138,6 +151,7 @@ char* encryptMessage(char* msg, char *key) {
 	emsg[strlen(msg)-1] = '\n';
 	emsg[strlen(msg)] = '\0';
 
+	// put message into returnable variable
 	strcpy(encryptMessage, emsg);
 
 	return encryptMessage;

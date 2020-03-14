@@ -1,3 +1,10 @@
+/*
+	Harinder Gakhal
+	CS 344 - Program 4
+	otp_dec_d.c
+	3/13/20
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+// Prototypes
 char* decryptMessage(char* msg, char *key);
 char* encryptMessage(char* msg, char *key);
 void error(const char *msg) { perror(msg); exit(1); } // Error function used for reporting issues
@@ -52,7 +60,6 @@ void main(int argc, char const *argv[]) {
 			memset(buffer, '\0', 256);
 			charsRead = recv(establishedConnectionFD, buffer, 255, 0); // Read the client's message from the socket
 			if (charsRead < 0) error("ERROR reading from socket");
-			// printf("SERVER: I received this from the client: \"%s\"\n", buffer);
 
 			// Send a Success message back to the client
 			charsRead = send(establishedConnectionFD, "I am the server, and I got your message", 39, 0); // Send success back
@@ -76,7 +83,6 @@ void main(int argc, char const *argv[]) {
 			memset(buffer, '\0', 256);
 			charsRead = recv(establishedConnectionFD, buffer, 255, 0); // Read the client's message from the socket
 			if (charsRead < 0) error("ERROR reading from socket");
-			// printf("SERVER: I received this from the client: \"%s\"\n", buffer);
 
 			// Send a Success message back to the client
 			charsRead = send(establishedConnectionFD, "I am the server, and I got your message", 39, 0); // Send success back
@@ -114,14 +120,17 @@ void main(int argc, char const *argv[]) {
 }
 
 char* decryptMessage(char* msg, char *key) {
+	// Throw error if the key is too short
 	if (strlen(key) < strlen(msg)) {
 		fprintf(stderr, "Error: key is too short!\n");
 		exit(1);
 	}
 
 	char *encryptMessage = malloc (sizeof (char) * strlen(msg)), emsg[strlen(msg)-1];
+	// character bank
 	const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 
+	// for each character in the message, subtract the key then mod 27 (if the difference is < 0, add 27 to it)
 	for (int i = 0; i < strlen(msg)-1; ++i) {
 		if ((msg[i] < 65 || msg[i] > 90) && msg[i] != ' '){
 			fprintf(stderr, "error: input contains bad characters");
@@ -155,6 +164,7 @@ char* decryptMessage(char* msg, char *key) {
 	emsg[strlen(msg)-1] = '\n';
 	emsg[strlen(msg)] = '\0';
 
+	// Put in returnable variable
 	strcpy(encryptMessage, emsg);
 
 	return encryptMessage;

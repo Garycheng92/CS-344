@@ -1,3 +1,10 @@
+/*
+	Harinder Gakhal
+	CS 344 - Program 4
+	otp_enc.c
+	3/13/20
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,8 +16,8 @@
 
 void error(const char *msg) { perror(msg); exit(0); } // Error function used for reporting issues
 
-
 void main(int argc, char const *argv[]) {
+	// Check if correct number of args are given and if the files exist
 	if (argc != 4) {
 		fprintf(stderr, "Please run command with three args: otp_enc [plaintext] [key] [port]\n");
 		exit(0);
@@ -23,8 +30,6 @@ void main(int argc, char const *argv[]) {
 		fprintf(stderr, "\"%s\" Does not exist!\n", argv[2]);
 		exit(0);
 	}
-
-	// ---------------------------------------------------------------------------------------------
 
 	int socketFD, portNumber, charsWritten, charsRead;
 	struct sockaddr_in serverAddress;
@@ -57,7 +62,6 @@ void main(int argc, char const *argv[]) {
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
-	// printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
 
 	// Send second file to server
 	charsWritten = send(socketFD, argv[2], strlen(argv[2]), 0); // Write to the server
@@ -68,7 +72,6 @@ void main(int argc, char const *argv[]) {
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
-	// printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
 
 	FILE *fp = fopen(argv[1], "r+");
 	fseek(fp, 0L, SEEK_END);
@@ -78,10 +81,10 @@ void main(int argc, char const *argv[]) {
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
-	// printf("SIZE OF FILE: %ld\nBUFFER: %ld\n", sizeofFile, strlen(buffer));
 	sizeofFile -= strlen(buffer);
 	printf("%s", buffer);
 
+	// If message is not fully sent, receive message again
 	while (sizeofFile != 0) {
 		if (strlen(buffer) == 0)
 			break;
