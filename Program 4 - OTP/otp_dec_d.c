@@ -123,7 +123,7 @@ char* decryptMessage(char* msg, char *key) {
 	const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 
 	for (int i = 0; i < strlen(msg)-1; ++i) {
-		if (msg[i] < 65 || msg[i] > 90 || msg[i] != ' '){
+		if ((msg[i] < 65 || msg[i] > 90) && msg[i] != ' '){
 			fprintf(stderr, "error: input contains bad characters");
 			exit(1);
 		}
