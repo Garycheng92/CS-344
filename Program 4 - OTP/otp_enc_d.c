@@ -1,4 +1,4 @@
-/*
+/*/*
 	Harinder Gakhal
 	CS 344 - Program 4
 	otp_enc_d.c
@@ -20,7 +20,7 @@ void error(const char *msg) { perror(msg); exit(1); } // Error function used for
 void main(int argc, char const *argv[]) {
 	int listenSocketFD, establishedConnectionFD, portNumber, charsRead;
 	socklen_t sizeOfClientInfo;
-	char buffer[256];
+	char buffer[1000000];
 	struct sockaddr_in serverAddress, clientAddress;
 	pid_t pid;
 
@@ -43,6 +43,7 @@ void main(int argc, char const *argv[]) {
 	listen(listenSocketFD, 5); // Flip the socket on - it can now receive up to 5 connections
 
 	while(1) {
+		char msg[1000000] = "", key[1000000] = "";
 		// Accept a connection, blocking if one is not available until one connects
 		sizeOfClientInfo = sizeof(clientAddress); // Get the size of the address for the client that will connect
 		establishedConnectionFD = accept(listenSocketFD, (struct sockaddr *)&clientAddress, &sizeOfClientInfo); // Accept
@@ -56,66 +57,71 @@ void main(int argc, char const *argv[]) {
 		}
 
 		if (pid == 0) {
-			// Get the message from the client and display it
-			memset(buffer, '\0', 256);
-			charsRead = recv(establishedConnectionFD, buffer, 255, 0); // Read the client's message from the socket
+			// Get the message from the client
+			memset(buffer, '\0', 1000000);
+			charsRead = recv(establishedConnectionFD, buffer, 999999, 0); // Read the client's message from the socket
 			if (charsRead < 0) fprintf(stderr, "ERROR reading from socket");
-			// printf("SERVER: I received this from the client: \"%s\"\n", buffer);
+			// Send a Success message back to the client
+			charsRead = send(establishedConnectionFD, "s", 1, 0); // Send success back
+			if (charsRead < 0) fprintf(stderr, "ERROR writing to socket");
 
+			int sizeofMSG = atoi(buffer);
+
+			// Get the message from the client and display it
+			memset(buffer, '\0', 1000000);
+			charsRead = recv(establishedConnectionFD, buffer, 999999, 0); // Read the client's message from the socket
+			if (charsRead < 0) fprintf(stderr, "ERROR reading from socket");
+			sizeofMSG -= strlen(buffer);
+			strcat(msg, buffer);
+
+			// If message is not fully sent receive message again
+			while (sizeofMSG != 0) {
+				if (strlen(buffer) == 0)
+					break;
+				memset(buffer, '\0', 1000000);
+				charsRead = recv(establishedConnectionFD, buffer, 999999, 0); // Read the client's message from the socket
+				if (charsRead < 0) fprintf(stderr, "ERROR reading from socket");
+				sizeofMSG -= strlen(buffer);
+				strcat(msg, buffer);
+			}
+			// Send a Success message back to the client
+			charsRead = send(establishedConnectionFD, "I am the server, and I got your messageeee", 39, 0); // Send success back
+			if (charsRead < 0) fprintf(stderr, "ERROR writing to socket");
+
+			// Get the message from the client
+			memset(buffer, '\0', 1000000);
+			charsRead = recv(establishedConnectionFD, buffer, 999999, 0); // Read the client's message from the socket
+			if (charsRead < 0) fprintf(stderr, "ERROR reading from socket");
 			// Send a Success message back to the client
 			charsRead = send(establishedConnectionFD, "I am the server, and I got your message", 39, 0); // Send success back
 			if (charsRead < 0) fprintf(stderr, "ERROR writing to socket");
 
-			// open file1
-			FILE * fp;
-			char * line = NULL;
-			size_t len = 0;
-			ssize_t read;
-
-			fp = fopen(buffer, "r");
-			if (fp == NULL)
-				exit(EXIT_FAILURE);
-
-			read = getline(&line, &len, fp);
-			char msg[strlen(line)];
-			strcpy(msg, line);
+			int sizeofKEY = atoi(buffer);
 
 			// Get the message from the client and display it
-			memset(buffer, '\0', 256);
-			charsRead = recv(establishedConnectionFD, buffer, 255, 0); // Read the client's message from the socket
+			memset(buffer, '\0', 1000000);
+			charsRead = recv(establishedConnectionFD, buffer, 999999, 0); // Read the client's message from the socket
 			if (charsRead < 0) fprintf(stderr, "ERROR reading from socket");
-			// printf("SERVER: I received this from the client: \"%s\"\n", buffer);
+			sizeofKEY -= strlen(buffer);
+			strcat(key, buffer);
 
+			// If message is not fully sent receive message again
+			while (sizeofKEY != 0) {
+				if (strlen(buffer) == 0)
+					break;
+				memset(buffer, '\0', 1000000);
+				charsRead = recv(establishedConnectionFD, buffer, 999999, 0); // Read the client's message from the socket
+				if (charsRead < 0) fprintf(stderr, "ERROR reading from socket");
+				sizeofKEY -= strlen(buffer);
+				strcat(key, buffer);
+			}
 			// Send a Success message back to the client
 			charsRead = send(establishedConnectionFD, "I am the server, and I got your message", 39, 0); // Send success back
 			if (charsRead < 0) fprintf(stderr, "ERROR writing to socket");
 
-			// open file2
-			FILE * fp2;
-			char * line2 = NULL;
-			size_t len2 = 0;
-			ssize_t read2;
-
-			fp2 = fopen(buffer, "r");
-			if (fp2 == NULL)
-				exit(EXIT_FAILURE);
-
-			read2 = getline(&line2, &len2, fp2);
-			char key[strlen(line2)];
-			strcpy(key, line2);
-
 			// Send a Success message back to the client
-			charsRead = send(establishedConnectionFD, encryptMessage(msg, key), strlen(line), 0); // Send success back
-			if (charsRead < 0) error("ERROR writing to socket");
-
-			// close open files
-			fclose(fp);
-			if (line)
-				free(line);
-
-			fclose(fp2);
-			if (line2)
-				free(line2);
+			charsRead = send(establishedConnectionFD, encryptMessage(msg, key), strlen(msg), 0); // Send success back
+			if (charsRead < 0) fprintf(stderr, "ERROR writing to socket");
 		}
 		close(establishedConnectionFD); // Close the existing socket which is connected to the client
 	}

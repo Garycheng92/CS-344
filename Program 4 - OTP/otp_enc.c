@@ -53,45 +53,109 @@ void main(int argc, char const *argv[]) {
 	if (connect(socketFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) // Connect socket to address
 		error("CLIENT: ERROR connecting");
 
-	// Send first file to server
-	charsWritten = send(socketFD, argv[1], strlen(argv[1]), 0); // Write to the server
-	if (charsWritten < 0) error("CLIENT: ERROR writing to socket");
-	if (charsWritten < strlen(argv[1])) printf("CLIENT: WARNING: Not all data written to socket!\n");
+	// open file1
+	FILE * fp;
+	char * line = NULL;
+	size_t len = 0;
+	ssize_t read;
 
+	fp = fopen(argv[1], "r");
+	if (fp == NULL)
+		exit(EXIT_FAILURE);
+
+	read = getline(&line, &len, fp);
+	char msg[strlen(line)];
+	strcpy(msg, line);
+	fclose(fp);
+
+	//get file size
+	fp = fopen(argv[1], "r");
+	fseek(fp, 0L, SEEK_END);
+	long int sizeofMSG = ftell(fp);
+	fclose(fp);
+
+	char sofMSG[100000];
+	sprintf(sofMSG, "%ld", sizeofMSG);
+
+	// Send size of first file to server
+	charsWritten = send(socketFD, sofMSG, strlen(sofMSG), 0); // Write to the server
+	if (charsWritten < 0) error("CLIENT: ERROR writing to socket");
+	if (charsWritten < strlen(sofMSG)) printf("CLIENT: WARNING: Not all data written to socket!\n");
+	// Get return message from server
+	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
+	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
+	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
+
+	// if (buffer[0] != 'e'){
+	// 	fprintf(stderr, "THE CLIENT IS CONNECTED TO THE WRONG SERVER!\n");
+	// 	exit(2);
+	// }
+
+	// Send first file to server
+	charsWritten = send(socketFD, msg, strlen(msg), 0); // Write to the server
+	if (charsWritten < 0) error("CLIENT: ERROR writing to socket");
+	if (charsWritten < strlen(msg)) printf("CLIENT: WARNING: Not all data written to socket!\n");
+	// Get return message from server
+	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
+	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
+	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
+
+	// open file2
+	FILE * fp2;
+	char * line2 = NULL;
+	size_t len2 = 0;
+	ssize_t read2;
+
+	fp2 = fopen(argv[2], "r");
+	if (fp2 == NULL)
+		exit(EXIT_FAILURE);
+
+	read2 = getline(&line2, &len2, fp2);
+	char key[strlen(line2)];
+	strcpy(key, line2);
+	fclose(fp2);
+
+	//get file size
+	fp2 = fopen(argv[2], "r");
+	fseek(fp2, 0L, SEEK_END);
+	long int sizeofKEY = ftell(fp2);
+
+	char sofKEY[100000];
+	sprintf(sofKEY, "%ld", sizeofKEY);
+
+	// Send size of second file to server
+	charsWritten = send(socketFD, sofKEY, strlen(sofKEY), 0); // Write to the server
+	if (charsWritten < 0) error("CLIENT: ERROR writing to socket");
+	if (charsWritten < strlen(sofKEY)) printf("CLIENT: WARNING: Not all data written to socket!\n");
 	// Get return message from server
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
 
 	// Send second file to server
-	charsWritten = send(socketFD, argv[2], strlen(argv[2]), 0); // Write to the server
+	charsWritten = send(socketFD, key, strlen(key), 0); // Write to the server
 	if (charsWritten < 0) error("CLIENT: ERROR writing to socket");
-	if (charsWritten < strlen(argv[2])) printf("CLIENT: WARNING: Not all data written to socket!\n");
-
+	if (charsWritten < strlen(key)) printf("CLIENT: WARNING: Not all data written to socket!\n");
 	// Get return message from server
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
 
-	FILE *fp = fopen(argv[1], "r+");
-	fseek(fp, 0L, SEEK_END);
-	long int sizeofFile = ftell(fp);
-
 	// Get return message from server
 	memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 	charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 	if (charsRead < 0) error("CLIENT: ERROR reading from socket");
-	sizeofFile -= strlen(buffer);
+	sizeofMSG -= strlen(buffer);
 	printf("%s", buffer);
 
 	// If message is not fully sent, receive message again
-	while (sizeofFile != 0) {
+	while (sizeofMSG != 0) {
 		if (strlen(buffer) == 0)
 			break;
 		memset(buffer, '\0', sizeof(buffer)); // Clear out the buffer again for reuse
 		charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); // Read data from the socket, leaving \0 at end
 		if (charsRead < 0) error("CLIENT: ERROR reading from socket\n");
-		sizeofFile -= strlen(buffer);
+		sizeofMSG -= strlen(buffer);
 		printf("%s", buffer);
 	}
 
